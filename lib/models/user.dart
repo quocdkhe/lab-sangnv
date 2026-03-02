@@ -1,5 +1,5 @@
 class User {
-  final String id;
+  final int id;
   final String username;
   final String avatar;
   final String password;
@@ -11,12 +11,25 @@ class User {
     required this.avatar,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'username': username,
+      'password': password,
+      'avatar': avatar,
+    };
+  }
+
+  factory User.fromMap(Map<String, dynamic> map) {
     return User(
-      id: json['id'],
-      username: json['username'],
-      password: json['password'],
-      avatar: json['avatar'],
+      id: int.tryParse(map['id'].toString()) ?? 0,
+      username: map['username'],
+      password: map['password'],
+      avatar: map['avatar'],
     );
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User.fromMap(json);
   }
 }

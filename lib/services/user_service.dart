@@ -1,46 +1,49 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../models/user.dart';
+import '../db/database_helper.dart';
 
 class UserService {
-  static const String _baseUrl =
-      'https://698297a89c3efeb892a2b63d.mockapi.io/api/users';
+  final DatabaseHelper _db = DatabaseHelper.instance;
 
+  /// Authenticates user by checking credentials against the database.
   Future<User?> login(String username, String password) async {
-    final uri = Uri.parse(_baseUrl);
-    final response = await http.get(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch users. Status: ${response.statusCode}');
-    }
-
-    final List<dynamic> jsonList = jsonDecode(response.body);
-    final users = jsonList.map((json) => User.fromJson(json)).toList();
-
     try {
-      return users.firstWhere(
-        (u) => u.username == username && u.password == password,
+      final db = await _db.database;
+      final result = await db.query(
+        'users',
+        where: 'username = ? AND password = ?',
+        whereArgs: [username, password],
       );
-    } catch (_) {
+      if (result.isNotEmpty) {
+        return User.fromMap(result.first);
+      }
       return null;
+    } catch (e) {
+      throw Exception('Failed to login: $e');
     }
   }
 
+  /// Fetches all users from the database.
   Future<List<User>> getUsers() async {
-    final uri = Uri.parse(_baseUrl);
-    final response = await http.get(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch users. Status: ${response.statusCode}');
+    try {
+      final db = await _db.database;
+      final result = await db.query('users');
+      return result.map((map) => User.fromMap(map)).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch users: $e');
     }
+  }
 
-    final List<dynamic> jsonList = jsonDecode(response.body);
-    return jsonList.map((json) => User.fromJson(json)).toList();
+  /// Get a single user by ID from the database.
+  Future<User?> getUserById(String id) async {
+    try {
+      final db = await _db.database;
+      final result = await db.query('users', where: 'id = ?', whereArgs: [id]);
+      if (result.isNotEmpty) {
+        return User.fromMap(result.first);
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Failed to fetch user: $e');
+    }
   }
 }

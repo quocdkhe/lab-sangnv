@@ -1,5 +1,7 @@
+import 'package:flutter/scheduler.dart';
+
 class Food {
-  final String id;
+  final int id;
   final String name;
   final String description;
   final double price;
@@ -15,14 +17,29 @@ class Food {
     this.image,
   });
 
-  factory Food.fromJson(Map<String, dynamic> json) {
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'price': price,
+      'manufacturer': manufacturer,
+      'image': image,
+    };
+  }
+
+  factory Food.fromMap(Map<String, dynamic> map) {
     return Food(
-      id: json['id'].toString(),
-      name: json['name'] as String,
-      description: json['description'] as String,
-      price: (json['price'] as num).toDouble(),
-      manufacturer: json['manufacturer'] as String,
-      image: json['image'] as String?,
+      id: int.tryParse(map['id'].toString()) ?? 0,
+      name: map['name'],
+      description: map['description'],
+      price: (map['price'] as num).toDouble(),
+      manufacturer: map['manufacturer'],
+      image: map['image'],
     );
+  }
+
+  factory Food.fromJson(Map<String, dynamic> json) {
+    return Food.fromMap(json);
   }
 }
