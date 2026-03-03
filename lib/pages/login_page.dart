@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
-import '../services/user_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,11 +12,17 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>(); // validate form
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  late final Future<List<User>> _usersFuture;
+  static final List<User> _users = [
+    User(id: 1, username: 'admin', password: 'admin123', avatar: ''),
+    User(id: 2, username: 'alice', password: 'alice456', avatar: ''),
+    User(id: 3, username: 'bob', password: 'bob789', avatar: ''),
+    User(id: 4, username: 'carol', password: 'carol321', avatar: ''),
+  ];
+
   String _errorMessage = '';
   bool _isLoading = false;
 
-  Future<void> _login() async {
+  void _login() {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -25,30 +30,28 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = '';
     });
 
-    try {
-      final user = await UserService().login(
-        _usernameController.text,
-        _passwordController.text,
-      );
+    final user = _users
+        .where(
+          (u) =>
+              u.username == _usernameController.text &&
+              u.password == _passwordController.text,
+        )
+        .firstOrNull;
 
-      if (!mounted) return;
+    setState(() => _isLoading = false);
 
-      if (user != null) {
-        Navigator.pushReplacementNamed(context, '/foods');
-      } else {
-        setState(() {
-          _errorMessage = 'Invalid username or password';
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (user != null) {
+      Navigator.pushReplacementNamed(context, '/foods');
+    } else {
+      setState(() {
+        _errorMessage = 'Invalid username or password';
+      });
     }
   }
 
   @override
   void initState() {
     super.initState();
-    _usersFuture = UserService().getUsers();
   }
 
   @override
@@ -139,42 +142,28 @@ class _LoginPageState extends State<LoginPage> {
                       : const Text('Login', style: TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 16),
-                FutureBuilder<List<User>>(
-                  future: _usersFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Text(
-                        'Loading hints...',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      );
-                    }
-                    final users = snapshot.data ?? [];
-                    if (users.isEmpty) return const SizedBox.shrink();
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Available accounts:',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Available accounts:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ..._users.map(
+                      (u) => Text(
+                        '• ${u.username} / ${u.password}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
                         ),
-                        const SizedBox(height: 4),
-                        ...users.map(
-                          (u) => Text(
-                            '• ${u.username} / ${u.password}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

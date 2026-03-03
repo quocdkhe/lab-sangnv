@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/food_service.dart';
+import '../models/food.dart';
+import 'food_list_page.dart'; // for hardcodedFoods
 
 class AddFoodPage extends StatefulWidget {
   const AddFoodPage({super.key});
@@ -15,35 +16,34 @@ class _AddFoodPageState extends State<AddFoodPage> {
   final _descriptionController = TextEditingController();
   final _manufacturerController = TextEditingController();
   final _imageController = TextEditingController();
-  final FoodService _foodService = FoodService();
   bool _isLoading = false;
 
-  Future<void> _addFood() async {
+  void _addFood() {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    try {
-      final newFood = await _foodService.createFood(
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        price: double.parse(_priceController.text.trim()),
-        manufacturer: _manufacturerController.text.trim(),
-        image: _imageController.text.trim().isEmpty
-            ? null
-            : _imageController.text.trim(),
-      );
+    // Generate a simple incremental id
+    final newId = hardcodedFoods.isEmpty
+        ? 1
+        : hardcodedFoods.map((f) => f.id).reduce((a, b) => a > b ? a : b) + 1;
 
-      if (mounted) Navigator.pop(context, newFood);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    final newFood = Food(
+      id: newId,
+      name: _nameController.text.trim(),
+      description: _descriptionController.text.trim(),
+      price: double.parse(_priceController.text.trim()),
+      manufacturer: _manufacturerController.text.trim(),
+      image: _imageController.text.trim().isEmpty
+          ? null
+          : _imageController.text.trim(),
+    );
+
+    hardcodedFoods.add(newFood);
+
+    setState(() => _isLoading = false);
+
+    if (mounted) Navigator.pop(context, newFood);
   }
 
   @override
